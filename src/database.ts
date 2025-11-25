@@ -73,6 +73,84 @@ export class InsightsDatabase {
     `);
   }
 
+  save(content: string, context: string, metadata?: Record<string, any>): Insight {
+    const id = randomUUID();
+    const now = Date.now();
+    const metadataJson = metadata ? JSON.stringify(metadata) : null;
+
+    const stmt = this.db.prepare(`
+      INSERT INTO insights (id, content, context, metadata, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(id, content, context, metadataJson, now, now);
+
+    return {
+      id,
+      content,
+      context,
+      metadata,
+      created_at: now,
+      updated_at: now
+    };
+  }
+
+  get(id: string): Insight | null {
+    const stmt = this.db.prepare(`
+      SELECT * FROM insights WHERE id = ?
+    `);
+
+    const row = stmt.get(id) as any;
+    if (!row) return null;
+
+    return this.rowToInsight(row);
+  }
+
+  private rowToInsight(row: any): Insight {
+    return {
+      id: row.id,
+      content: row.content,
+      context: row.context,
+      metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    };
+  }
+
+  update(id: string, updates: { content?: string; metadata?: Record<string, any> }): Insight | null {
+    const existing = this.get(id);
+    if (!existing) return null;
+
+    const now = Date.now();
+    const content = updates.content ?? existing.content;
+    const metadata = updates.metadata ?? existing.metadata;
+    const metadataJson = metadata ? JSON.stringify(metadata) : null;
+
+    const stmt = this.db.prepare(`
+      UPDATE insights
+      SET content = ?, metadata = ?, updated_at = ?
+      WHERE id = ?
+    `);
+
+    stmt.run(content, metadataJson, now, id);
+
+    return {
+      ...existing,
+      content,
+      metadata,
+      updated_at: now
+    };
+  }
+
+  delete(id: string): boolean {
+    const stmt = this.db.prepare(`
+      DELETE FROM insights WHERE id = ?
+    `);
+
+    const result = stmt.run(id);
+    return result.changes > 0;
+  }
+
   close(): void {
     this.db.close();
   }
