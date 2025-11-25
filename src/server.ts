@@ -27,6 +27,38 @@ export function createInsightsServer(db: InsightsDatabase, mode: 'stdio' | 'http
     updated_at: z.number()
   });
 
+  // Tool 1: save-insight
+  server.registerTool(
+    'save-insight',
+    {
+      title: 'Save Insight',
+      description: 'Save a new insight to the database',
+      inputSchema: {
+        content: z.string().min(3).describe('The insight content'),
+        context: z.string().optional().describe('Project path or "global". Required in HTTP mode.'),
+        metadata: z.record(z.any()).optional().describe('Optional metadata as JSON object')
+      },
+      outputSchema: {
+        id: z.string().describe('Generated insight ID (UUID)'),
+        created_at: z.number().describe('Creation timestamp')
+      }
+    },
+    async ({ content, context, metadata }) => {
+      const resolvedContext = getContext(context);
+      const insight = db.save(content, resolvedContext, metadata);
+
+      const output = {
+        id: insight.id,
+        created_at: insight.created_at
+      };
+
+      return {
+        content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+        structuredContent: output
+      };
+    }
+  );
+
   // Tool 2: search-insights
   server.registerTool(
     'search-insights',
