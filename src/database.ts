@@ -151,6 +151,77 @@ export class InsightsDatabase {
     return result.changes > 0;
   }
 
+  list(context?: string, limit: number = 20, offset: number = 0): { results: Insight[]; total: number; hasMore: boolean } {
+    let query = 'SELECT * FROM insights';
+    let countQuery = 'SELECT COUNT(*) as total FROM insights';
+    const params: any[] = [];
+
+    if (context) {
+      query += ' WHERE context = ?';
+      countQuery += ' WHERE context = ?';
+      params.push(context);
+    }
+
+    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+
+    const totalResult = this.db.prepare(countQuery).get(...params) as { total: number };
+    const total = totalResult.total;
+
+    const stmt = this.db.prepare(query);
+    const rows = stmt.all(...params, limit, offset) as any[];
+    const results = rows.map(row => this.rowToInsight(row));
+
+    return {
+      results,
+      total,
+      hasMore: offset + results.length < total
+    };
+  }
+
+  search(query: string, context?: string, limit: number = 20, offset: number = 0): { results: Insight[]; total: number; hasMore: boolean } {
+    let sql = `
+      SELECT insights.*, rank
+      FROM insights_fts
+      JOIN insights ON insights.rowid = insights_fts.rowid
+      WHERE insights_fts MATCH ?
+    `;
+    const params: any[] = [query];
+
+    if (context) {
+      sql += ' AND insights.context = ?';
+      params.push(context);
+    }
+
+    sql += ' ORDER BY rank LIMIT ? OFFSET ?';
+
+    // Get total count
+    let countSql = `
+      SELECT COUNT(*) as total
+      FROM insights_fts
+      JOIN insights ON insights.rowid = insights_fts.rowid
+      WHERE insights_fts MATCH ?
+    `;
+    const countParams: any[] = [query];
+
+    if (context) {
+      countSql += ' AND insights.context = ?';
+      countParams.push(context);
+    }
+
+    const totalResult = this.db.prepare(countSql).get(...countParams) as { total: number };
+    const total = totalResult.total;
+
+    const stmt = this.db.prepare(sql);
+    const rows = stmt.all(...params, limit, offset) as any[];
+    const results = rows.map(row => this.rowToInsight(row));
+
+    return {
+      results,
+      total,
+      hasMore: offset + results.length < total
+    };
+  }
+
   close(): void {
     this.db.close();
   }
