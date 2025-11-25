@@ -1,0 +1,21 @@
+# Git worktrees
+.worktrees/
+
+# Node.js
+node_modules/
+dist/
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
