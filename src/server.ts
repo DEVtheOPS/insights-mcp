@@ -116,5 +116,91 @@ export function createInsightsServer(db: InsightsDatabase, mode: 'stdio' | 'http
     }
   );
 
+  // Tool 4: get-insight
+  server.registerTool(
+    'get-insight',
+    {
+      title: 'Get Insight',
+      description: 'Retrieve a specific insight by ID',
+      inputSchema: {
+        id: z.string().uuid().describe('Insight ID')
+      },
+      outputSchema: {
+        insight: InsightSchema.optional().describe('The insight if found'),
+        found: z.boolean().describe('Whether insight exists')
+      }
+    },
+    async ({ id }) => {
+      const insight = db.get(id);
+      const output = {
+        insight: insight || undefined,
+        found: insight !== null
+      };
+
+      return {
+        content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+        structuredContent: output
+      };
+    }
+  );
+
+  // Tool 5: update-insight
+  server.registerTool(
+    'update-insight',
+    {
+      title: 'Update Insight',
+      description: "Update an existing insight's content or metadata",
+      inputSchema: {
+        id: z.string().uuid().describe('Insight ID'),
+        content: z.string().min(3).optional().describe('New content'),
+        metadata: z.record(z.any()).optional().describe('New metadata (replaces existing)')
+      },
+      outputSchema: {
+        updated: z.boolean().describe('Whether update succeeded'),
+        insight: InsightSchema.optional().describe('Updated insight if found')
+      }
+    },
+    async ({ id, content, metadata }) => {
+      const insight = db.update(id, { content, metadata });
+      const output = {
+        updated: insight !== null,
+        insight: insight || undefined
+      };
+
+      return {
+        content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+        structuredContent: output
+      };
+    }
+  );
+
+  // Tool 6: delete-insight
+  server.registerTool(
+    'delete-insight',
+    {
+      title: 'Delete Insight',
+      description: 'Delete an insight by ID',
+      inputSchema: {
+        id: z.string().uuid().describe('Insight ID')
+      },
+      outputSchema: {
+        deleted: z.boolean().describe('Whether deletion succeeded'),
+        id: z.string().describe('The insight ID')
+      }
+    },
+    async ({ id }) => {
+      const deleted = db.delete(id);
+      const output = {
+        deleted,
+        id
+      };
+
+      return {
+        content: [{ type: 'text', text: JSON.stringify(output, null, 2) }],
+        structuredContent: output
+      };
+    }
+  );
+
   return server;
 }
