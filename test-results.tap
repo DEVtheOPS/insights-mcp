@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: database CRUD and search
+ok 1 - database CRUD and search # SKIP better-sqlite3 native module not available in this runtime
+  ---
+  duration_ms: 4.466791
+  ...
+# Subtest: HTTP MCP end-to-end tools, pagination, and context enforcement
+ok 2 - HTTP MCP end-to-end tools, pagination, and context enforcement # SKIP Listening not permitted in this environment
+  ---
+  duration_ms: 3.674458
+  ...
+# Subtest: HTTP respects CLI and env DB path overrides
+ok 3 - HTTP respects CLI and env DB path overrides # SKIP Listening not permitted in this environment
+  ---
+  duration_ms: 1.7635
+  ...
+# Subtest: stdio mode starts without crashing
+ok 4 - stdio mode starts without crashing # SKIP Stdio server exited early in restricted environment
+  ---
+  duration_ms: 305.704625
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 4
+# todo 0
+# duration_ms 364.433458

@@ -4,10 +4,20 @@ import { InsightsDatabase } from './database.js';
 import { Insight } from './types.js';
 
 export function createInsightsServer(db: InsightsDatabase, mode: 'stdio' | 'http'): McpServer {
-  const server = new McpServer({
-    name: 'insights-mcp',
-    version: '1.0.0'
-  });
+  const server = new McpServer(
+    {
+      name: 'insights-mcp',
+      version: '1.0.0'
+    },
+    {
+      instructions: [
+        'Use context to isolate projects. In http mode the `context` parameter is required on every tool call.',
+        'If no context is provided in stdio mode, the server defaults to the current working directory; pass "global" for cross-project insights.',
+        'save-insight stores {content, metadata?}; search-insights and list-insights accept limit/offset for pagination.',
+        'Use get-insight for exact retrieval, update-insight to replace content/metadata, delete-insight to remove records.'
+      ].join(' ')
+    }
+  );
 
   // Helper to get context with mode-aware validation
   const getContext = (providedContext?: string): string => {
